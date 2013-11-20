@@ -112,6 +112,26 @@ void testApp::setup(){
     //TODO: Put 1 piece for each player in the middle of hte board, side by side
     
     startTime = ofGetElapsedTimef();
+
+
+
+	//TESTS
+
+	putPieceAt(4, 4, 1);
+	putPieceAt(4, 3, 1);
+	putPieceAt(4, 5, 1);
+	putPieceAt(5, 4, 2);
+	putPieceAt(5, 3, 2);
+	putPieceAt(5, 5, 2);
+	putPieceAt(3, 3, 2);
+	putPieceAt(3, 4, 1);
+
+	int okayNbrs = 0;
+	int badNbrs = 0;
+
+	checkNbrs(4, 5, okayNbrs, badNbrs);
+
+	std:: cout << "Okay Numbers is: " << okayNbrs << "\nBad Numbers is: " << badNbrs << std::endl;
 }
 
 //Return true iff there is a piece in board space (x,y), and that piece
@@ -182,7 +202,60 @@ void drawHex(float x, float y, float sideLen){
  * under consideration.
  */
 void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs){
-    //TODO
+	int offSetCalc = y % 2; // Need this because of how board is drawn (To make this easier on me)
+
+	//Spots on same x axis are easy to check
+
+	if(x > 0){
+		if(board[x-1 + y*boardH] >0)
+		(board[x-1 + y*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+	}
+	if(x < boardW-1){
+		if(board[x+1 + y*boardH] > 0)
+			(board[x+1+y*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+	}
+
+	// Because of how it's drawn, the indexes are different if they are in different rows (even/odd). I'm sure there's a workaround,
+	// this seems to be a normal hex board that's flipped. I'm guessing the math is different, but this works for now...
+	if(offSetCalc > 0){
+
+		if( y > 0){
+				if(board[x + (y-1)*boardH] > 0)
+					(board[x + (y-1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+
+				if(x < boardW-1){
+					if(board[x+1 + (y-1)*boardH] > 0)
+						(board[x+1 + (y-1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+				}
+			}
+			if( y < boardH-1){
+				if(board[x + (y+1)*boardH] > 0)
+					(board[x + (y+1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+
+				if(x < boardW-1){
+					if(board[x+1 + (y+1)*boardH] > 0)
+						(board[x+1 + (y+1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+				}
+			}
+
+		}else{
+			if( y > 0){
+				if(x > 0){
+					if(board[x-1 + (y-1)*boardH] > 0)
+						(board[x-1 + (y-1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+				}
+				if(board[x + (y-1)*boardH] > 0)
+					(board[x + (y-1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+			}
+			if( y < boardH-1){
+				if(x > 0){
+					if(board[x-1 + (y+1)*boardH] > 0)
+						(board[x-1 + (y+1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+				}
+				if(board[x + (y+1)*boardH] > 0)
+					(board[x + (y+1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+			}
+	}
 }
 
 /*
