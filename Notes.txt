@@ -1,0 +1,9 @@
+// These are Just personal notes that I will want to remember later
+
+/*
+* Wrap around needs to be implemented, I forgot initially
+* Create "helper" classes to get different coordinates, instead of copying code constantly
+* Look into math based on y as x axis, x as y axis, for a simpler method (normal hex board)
+* Add sound, and Game menu with Options/start/exit; Pause menu; Sounds; and a Victory Screen
+* Track Progression across multiple games
+*/
