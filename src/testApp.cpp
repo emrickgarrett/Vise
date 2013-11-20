@@ -1,6 +1,7 @@
 #include "testApp.h"
 
 #include <set>
+#include <iostream> //For debugging
 
 //////////////////
 /* Function declarations
@@ -46,6 +47,9 @@ int pl2spares=4;
 
 //Valid values are 1 or 2, to indicate whose turn it is
 int whoseTurn=1;
+
+//Vector to hold all spots on the board, using flags above to indicate if spot is controlled (1 or 2)
+std::vector<int> board = std::vector<int>(boardW*boardH, 0);
 
 /*
  * What is the current player doing?
@@ -98,6 +102,7 @@ float hexH = 1.5*sideLen;
 
 //--------------------------------------------------------------
 void testApp::setup(){
+
     //This is the *maximum* rate. Your program might go slower if your
     // updates or draws are too time conusming.
     ofSetFrameRate(60);
@@ -251,8 +256,7 @@ bool canPlaceOldPiece(int x, int y){
  * (1 or 2)
  */
 int pieceAt(int x,int y){
-    //TODO
-    return 0;
+    return board[x+y*boardH];
 }
 
 void drawBoard(){
@@ -357,7 +361,7 @@ void testApp::draw(){
  * If whichPieces is 0, then it clears that board position.
  */
 void putPieceAt(int x, int y, int whichPiece){
-    //TODO
+	board[x+y*boardH] = whichPiece;
 }
 
 //--------------------------------------------------------------
