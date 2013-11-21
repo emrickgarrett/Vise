@@ -13,7 +13,7 @@
 //Functions you might want to use, game logic
 bool inVise(int x, int y);
 void doVise();
-void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs);
+void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<pair<int, int>>& neighborList);
 bool canPlaceNewPiece(int x, int y);
 bool isNeighboringSpace(int x, int y);
 bool isJumpSpace(int x, int y);
@@ -117,7 +117,7 @@ void testApp::setup(){
 
 	/************************************** TESTS ************************************/
 
-	/**** Placing Pieces/ Checking for Neighbors test ****
+	/**** Placing Pieces/ Checking for Neighbors test ****/
 	putPieceAt(4, 4, 1);
 	putPieceAt(4, 3, 1);
 	putPieceAt(4, 5, 1);
@@ -126,14 +126,23 @@ void testApp::setup(){
 	putPieceAt(5, 5, 2);
 	putPieceAt(3, 3, 2);
 	putPieceAt(3, 4, 1);
-
+	
 	int okayNbrs = 0;
 	int badNbrs = 0;
 
-	checkNbrs(4, 5, okayNbrs, badNbrs);
+	std::vector<std::pair<int, int>> temp = std::vector<std::pair<int, int>>();
+	
+	checkNbrs(4, 5, okayNbrs, badNbrs, temp);
+
+	//Method to test if it successfully gets all the neighbor pairs
+	int i = 0;
+	for(std::vector<std::pair<int, int>>::iterator it = temp.begin(); it != temp.end(); it++, i++){
+		std::cout << "Neighbor #" << i << " is: " << (*it).first << ", " << (*it).second << std::endl;
+	}
+
 
 	std::cout << "Okay Numbers is: " << okayNbrs << "\nBad Numbers is: " << badNbrs << std::endl;
-	*/
+	/*/
 
 	/**** Is a Neighbor test ****
 	selectedPieceX = 1;
@@ -218,41 +227,57 @@ void drawHex(float x, float y, float sideLen){
  * in determining if the current player can play a new piece in the hex
  * under consideration.
  */
-void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs){
+void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<std::pair<int, int>>& neighborList){
 	int offSetCalc = y % 2; // Need this because of how board is drawn (To make this easier on me)
 	int offset = (offSetCalc == 0)? -1 : 1;
+
+
 	//Spots on same x axis are easy to check
 
 	if(x > 0){
-		if(board[x-1 + y*boardH] >0)
-		(board[x-1 + y*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+		if(board[x-1 + y*boardH] >0){
+			(board[x-1 + y*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+			neighborList.push_back(std::pair<int, int>(x-1, y));
+		}
 	}
 	if(x < boardW-1){
-		if(board[x+1 + y*boardH] > 0)
+		if(board[x+1 + y*boardH] > 0){
 			(board[x+1+y*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+			neighborList.push_back(std::pair<int, int>(x+1, y));
+		}
 	}
 	
 
 	//Use offset to account for odd/even rows
 
 		if( y > 0){
-				if(board[x + (y-1)*boardH] > 0)
+				if(board[x + (y-1)*boardH] > 0){
 					(board[x + (y-1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+					neighborList.push_back(std::pair<int, int>(x, y-1));
+				}
 
 				if(x < boardW-1){
-					if(board[x+offset + (y-1)*boardH] > 0)
+					if(board[x+offset + (y-1)*boardH] > 0){
 						(board[x+offset + (y-1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+						neighborList.push_back(std::pair<int, int>(x+offset, y-1));
+					}
 				}
 			}
 			if( y < boardH-1){
-				if(board[x + (y+1)*boardH] > 0)
+				if(board[x + (y+1)*boardH] > 0){
 					(board[x + (y+1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+					neighborList.push_back(std::pair<int, int>(x, y+1));
+				}
 
 				if(x < boardW-1){
-					if(board[x+offset + (y+1)*boardH] > 0)
+					if(board[x+offset + (y+1)*boardH] > 0){
 						(board[x+offset + (y+1)*boardH] == whoseTurn)? okayNbrs++ : badNbrs++;
+						neighborList.push_back(std::pair<int, int>(x+offset, y+1));
+					}
 				}
 			}
+
+			return;
 }
 
 /*
@@ -265,7 +290,8 @@ void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs){
 bool canPlaceNewPiece(int x, int y){
     int okayNbrs=0;
     int badNbrs=0;
-    checkNbrs(x,y,okayNbrs,badNbrs);
+	std::vector<std::pair<int, int>> garbage = std::vector<std::pair<int, int>>();
+    checkNbrs(x,y,okayNbrs,badNbrs, garbage);
     return(okayNbrs > 0 && badNbrs == 0);
 }
 
@@ -295,6 +321,23 @@ bool isJumpSpace(int x, int y){
 // return false
 bool isConnected(){
     //TODO
+	int tempX = 0;
+	int tempY = 0;
+	int numCount = 0;
+
+
+	for(int x = 0; x < boardW; x++){
+		for(int y = 0; y < boardH; y++){
+			if(board[x + y*boardH] != 0) numCount++;
+			if(tempX == 0){
+				tempX = x;
+				tempY = y;
+			}
+		}
+	}
+
+
+
     return false;
 }
 
