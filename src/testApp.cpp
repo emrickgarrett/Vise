@@ -115,8 +115,9 @@ void testApp::setup(){
 
 
 
-	//TESTS
+	/************************************** TESTS ************************************/
 
+	/**** Placing Pieces/ Checking for Neighbors test ****
 	putPieceAt(4, 4, 1);
 	putPieceAt(4, 3, 1);
 	putPieceAt(4, 5, 1);
@@ -131,7 +132,23 @@ void testApp::setup(){
 
 	checkNbrs(4, 5, okayNbrs, badNbrs);
 
-	std:: cout << "Okay Numbers is: " << okayNbrs << "\nBad Numbers is: " << badNbrs << std::endl;
+	std::cout << "Okay Numbers is: " << okayNbrs << "\nBad Numbers is: " << badNbrs << std::endl;
+	*/
+
+	/**** Is a Neighbor test ****
+	selectedPieceX = 1;
+	selectedPieceY = 1;
+	std::cout << "Is a Neighbor (1, 0)? " << isNeighboringSpace(1, 0) << std::endl;
+	std::cout << "Is a Neighbor (2, 0)? " << isNeighboringSpace(2, 0) << std::endl;
+	std::cout << "Is a Neighbor (2, 1)? " << isNeighboringSpace(2, 1) << std::endl;
+	std::cout << "Is a Neighbor? (0, 1)" << isNeighboringSpace(0, 1) << std::endl;
+	std::cout << "Is a Neighbor? (1, 2)" << isNeighboringSpace(1, 2) << std::endl;
+	std::cout << "Is a Neighbor? (2, 2)" << isNeighboringSpace(2, 2) << std::endl;
+	std::cout << "Is a Neighbor? (1, 3)" << isNeighboringSpace(1, 3) << std::endl;
+	std::cout << "Is a Neighbor? (2, 3)" << isNeighboringSpace(2, 3) << std::endl;
+	std::cout << "Is a Neighbor? (0, 3)" << isNeighboringSpace(0, 3) << std::endl;
+	*/ 
+
 }
 
 //Return true iff there is a piece in board space (x,y), and that piece
@@ -255,7 +272,10 @@ bool canPlaceNewPiece(int x, int y){
 //Return true iff (x,y) is neighboring to (selectedPieceX,selectedPieceY)
 //These inputs are in board coordinates, not screen coordinates
 bool isNeighboringSpace(int x, int y){
-    //TODO
+    // Simple, just see if the absolute values of the difference of x/y are both less or equal to one.
+	if( abs(abs(selectedPieceX) - abs(x)) <= 1 && abs(abs(selectedPieceY) - abs(y)) <= 1){
+		return true;
+	}
     return false;
 }
 
