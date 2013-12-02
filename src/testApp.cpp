@@ -13,7 +13,7 @@
 //Functions you might want to use, game logic
 bool inVise(int x, int y);
 void doVise();
-void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<pair<int, int>>& neighborList);
+void getNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<pair<int, int>>& neighborList);
 bool canPlaceNewPiece(int x, int y);
 bool isNeighboringSpace(int x, int y);
 bool isJumpSpace(int x, int y);
@@ -117,7 +117,24 @@ void testApp::setup(){
 
 	/************************************** TESTS ************************************/
 
-	/**** Placing Pieces/ Checking for Neighbors test ****/
+	/***** Test to see if jump spaces are working! *****/
+	selectedPieceX = 4;
+	selectedPieceY = 3;
+
+	putPieceAt(4, 3, 1);
+	putPieceAt(4, 4, 2);
+	putPieceAt(4, 5, 2);
+	putPieceAt(4, 2, 2);
+	putPieceAt(5, 3, 2);
+
+	std::cout << "Space at (4,4): " << isJumpSpace(4, 4) << std::endl;
+	std::cout << "Space at (4,5): " << isJumpSpace(4, 5) << std::endl;
+	std::cout << "Space at (4,2): " << isJumpSpace(4, 2) << std::endl;
+	std::cout << "Space at (5,3): " << isJumpSpace(5, 3) << std::endl;
+
+	/*/
+
+	/**** Placing Pieces/ Checking for Neighbors test ****
 	putPieceAt(4, 4, 1);
 	putPieceAt(4, 3, 1);
 	putPieceAt(4, 5, 1);
@@ -132,7 +149,7 @@ void testApp::setup(){
 
 	std::vector<std::pair<int, int>> temp = std::vector<std::pair<int, int>>();
 	
-	checkNbrs(4, 5, okayNbrs, badNbrs, temp);
+	getNbrs(4, 5, okayNbrs, badNbrs, temp);
 
 	//Method to test if it successfully gets all the neighbor pairs
 	int i = 0;
@@ -142,7 +159,7 @@ void testApp::setup(){
 
 
 	std::cout << "Okay Numbers is: " << okayNbrs << "\nBad Numbers is: " << badNbrs << std::endl;
-	/*/
+	*/
 
 	/**** Is a Neighbor test ****
 	selectedPieceX = 1;
@@ -227,7 +244,7 @@ void drawHex(float x, float y, float sideLen){
  * in determining if the current player can play a new piece in the hex
  * under consideration.
  */
-void checkNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<std::pair<int, int>>& neighborList){
+void getNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<std::pair<int, int>>& neighborList){
 	int offSetCalc = y % 2; // Need this because of how board is drawn (To make this easier on me)
 	int offset = (offSetCalc == 0)? -1 : 1;
 
@@ -291,7 +308,7 @@ bool canPlaceNewPiece(int x, int y){
     int okayNbrs=0;
     int badNbrs=0;
 	std::vector<std::pair<int, int>> garbage = std::vector<std::pair<int, int>>();
-    checkNbrs(x,y,okayNbrs,badNbrs, garbage);
+    getNbrs(x,y,okayNbrs,badNbrs, garbage);
     return(okayNbrs > 0 && badNbrs == 0);
 }
 
@@ -308,8 +325,10 @@ bool isNeighboringSpace(int x, int y){
 //Return true iff (x,y) is one jump to (selectedPieceX,selectedPieceY)
 //These inputs are in board coordinates, not screen coordinates
 bool isJumpSpace(int x, int y){
-    //TODO
-    return false;
+	int xVal = x-selectedPieceX;
+	int yVal = y-selectedPieceY;
+
+	return isNeighboringSpace(selectedPieceX-xVal,selectedPieceY-yVal);
 }
 
 //Return true if and only if the board currently contains
@@ -329,16 +348,17 @@ bool isConnected(){
 	for(int x = 0; x < boardW; x++){
 		for(int y = 0; y < boardH; y++){
 			if(board[x + y*boardH] != 0) numCount++;
-			if(tempX == 0){
-				tempX = x;
-				tempY = y;
-			}
+
+			//TODO Breadth search based on my getNbrs function!
+
+			//TODO return:
+			return (numCount == 2 + (4-pl1spares)+ (4-pl2spares));
+
+
 		}
 	}
 
-
-
-    return false;
+	return true;
 }
 
 /* This is used when the player is moving one of her pieces that is
@@ -358,7 +378,7 @@ bool isConnected(){
  * 3) Target space is still adjacent to an existing piece (could be our own
  *    piece or an enemy piece, doesn't matter)
  *
- * Hint: you may want to use checkNbrs, isNeighboringSpace,
+ * Hint: you may want to use getNbrs, isNeighboringSpace,
  *       isJumpSpace, and isConnected as subroutines here.
  */
 bool canPlaceOldPiece(int x, int y){
