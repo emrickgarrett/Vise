@@ -22,6 +22,7 @@ bool canPlaceOldPiece(int x, int y);
 int pieceAt(int x,int y);
 void putPieceAt(int x, int y, int whichPiece);
 std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vector<pair<int,int>> v2);
+void getOpenNbrs(int x, int y, std::vector<pair<int,int>>& list);
 
 //Drawing functions
 void drawHex(float x, float y, float sideLen);
@@ -319,6 +320,52 @@ void getNbrs(int x, int y, int& okayNbrs, int& badNbrs, std::vector<std::pair<in
 			return;
 }
 
+void getOpenNbrs(int x, int y, std::vector<pair<int,int>>& list){
+	int offSetCalc = y % 2; // Need this because of how board is drawn (To make this easier on me)
+	int offset = (offSetCalc == 0)? -1 : 1;
+
+
+	//Spots on same x axis are easy to check
+
+	if(x > 0){
+		if(board[x-1 + y*boardH] == 0){
+			list.push_back(std::pair<int, int>(x-1, y));
+		}
+	}
+	if(x < boardW-1){
+		if(board[x+1 + y*boardH] == 0){
+			list.push_back(std::pair<int, int>(x+1, y));
+		}
+	}
+	
+
+	//Use offset to account for odd/even rows
+
+		if( y > 0){
+				if(board[x + (y-1)*boardH] == 0){
+					list.push_back(std::pair<int, int>(x, y-1));
+				}
+
+				if(x < boardW-1){
+					if(board[x+offset + (y-1)*boardH] == 0){
+						list.push_back(std::pair<int, int>(x+offset, y-1));
+					}
+				}
+			}
+			if( y < boardH-1){
+				if(board[x + (y+1)*boardH] == 0){
+					list.push_back(std::pair<int, int>(x, y+1));
+				}
+
+				if(x < boardW-1){
+					if(board[x+offset + (y+1)*boardH] == 0){
+						list.push_back(std::pair<int, int>(x+offset, y+1));
+					}
+				}
+			}
+	return;
+}
+
 /*
  * Return true iff the current player can place a new piece
  * in row y, column x, without violating the rules. That is,
@@ -336,11 +383,21 @@ bool canPlaceNewPiece(int x, int y){
 
 //Return true iff (x,y) is neighboring to (selectedPieceX,selectedPieceY)
 //These inputs are in board coordinates, not screen coordinates
+//May have bad logic!
 bool isNeighboringSpace(int x, int y){
     // Simple, just see if the absolute values of the difference of x/y are both less or equal to one.
-	if( abs(abs(selectedPieceX) - abs(x)) <= 1 && abs(abs(selectedPieceY) - abs(y)) <= 1){
-		return true;
+	// Need an alternative method that gets all 'open' neighboring spaces!
+	std::vector<pair<int,int>> neighbors = std::vector<pair<int,int>>();
+	getOpenNbrs(selectedPieceX, selectedPieceY, neighbors);
+
+	pair<int,int> temp = pair<int,int>(x,y);
+
+	for(std::vector<pair<int,int>>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
+		if((*it).first == temp.first && (*it).second == temp.second){
+			return true;
+		}
 	}
+
     return false;
 }
 
@@ -364,10 +421,10 @@ bool isJumpSpace(int x, int y){
 			}
 		}
 		if(selectedPieceX-2 == x && selectedPieceY == y && selectedPieceX-2 >= 0){
-			if(board[(selectedPieceX+1) + (selectedPieceY)*boardH] != 0) return true;
+			if(board[(selectedPieceX-1) + (selectedPieceY)*boardH] != 0) return true;
 		}
 		if(selectedPieceX+2 == x && selectedPieceY == y && selectedPieceX+2 < boardW){
-			if(board[(selectedPieceX-1) + (selectedPieceY)*boardH] != 0) return true;
+			if(board[(selectedPieceX+1) + (selectedPieceY)*boardH] != 0) return true;
 		}
 		if(selectedPieceY +2 < boardH){
 			if(selectedPieceX -1 == x && selectedPieceY +2 == y && selectedPieceX -1 >= 0){
@@ -387,10 +444,10 @@ bool isJumpSpace(int x, int y){
 			}
 		}
 		if(selectedPieceX-2 == x && selectedPieceY == y && selectedPieceX -2 >= 0){
-			if(board[(selectedPieceX+1) + (selectedPieceY)*boardH] != 0) return true;
+			if(board[(selectedPieceX-1) + (selectedPieceY)*boardH] != 0) return true;
 		}
 		if(selectedPieceX+2 == x && selectedPieceY == y && selectedPieceX + 2 < boardW){
-			if(board[(selectedPieceX-1) + (selectedPieceY)*boardH] != 0) return true;
+			if(board[(selectedPieceX+1) + (selectedPieceY)*boardH] != 0) return true;
 		}
 		if(selectedPieceX -1 == x && selectedPieceY +2 == y && selectedPieceX -1 >= 0 && selectedPieceY +2 < boardH){
 			if(board[(selectedPieceX) + (selectedPieceY+1)*boardH] != 0) return true;
@@ -449,14 +506,11 @@ bool isConnected(){
 
 							getNbrs((*it).first, (*it).second, goodNbrs, badNbrs, temp);
 							neighbors = mergeVectors(neighbors, temp);
-							it = neighbors.begin(); //Temp fix, screws up iterator
-							std::cout << "The Count has gone up!" << std::endl;
+							it = neighbors.begin();
 
 						}
 					
 				 }
-				 std::cout << "Area 1: " << 2 + (4 - pl1spares) + (4-pl2spares)<< std::endl;
-				 std::cout << "NumCount: " << numCount-destroyedPieces << std::endl;
 				 return (numCount == 2 + (4 - pl1spares) + (4-pl2spares) - destroyedPieces);
 
 			}
@@ -467,12 +521,7 @@ bool isConnected(){
 		}
 		
 	}
-
-	//TODO Breadth search based on my getNbrs function!
-
 	//TODO return:
-	std::cout << "Area 2: " << 2 + (4 - pl1spares) + (4-pl2spares)<< std::endl;
-	std::cout << "NumCount: " << numCount-destroyedPieces << std::endl;
 	return (numCount == 2 + (4-pl1spares)+ (4-pl2spares) - destroyedPieces);
 }
 
@@ -524,7 +573,7 @@ bool canPlaceOldPiece(int x, int y){
 
 	if(board[x + y*boardH] != 0) return false;
 
-	getNbrs(x, y, okayNbrs, badNbrs, neighbors);
+	getNbrs(selectedPieceX, selectedPieceY, okayNbrs, badNbrs, neighbors);
 	if(okayNbrs == 0 && badNbrs == 0) return false;
 	if(!isJumpSpace(x, y) && !isNeighboringSpace(x, y)) return false;
 
