@@ -349,12 +349,61 @@ bool isNeighboringSpace(int x, int y){
 //The logic for this isn't right! NEED TO FIX
 bool isJumpSpace(int x, int y){
 
+	if(board[x+y*boardH] != 0) return false; //Space isn't empty ;)
 	//TODO
+	int offset = ((y % 2 == 0))? -1 : 1;
 
-	int xVal = x-selectedPieceX;
-	int yVal = y-selectedPieceY;
+	//Simplify the branch to make this part easier, I don't have enough time to really think it through :/
+	if(offset == -1){ //Even Row
+		if(selectedPieceY -2 >= 0){
+			if(selectedPieceX + 1 == x && selectedPieceY -2 == y && selectedPieceX +1 < boardW){
+				if(board[selectedPieceX + (selectedPieceY-1)*boardH] != 0) return true;
+			}
+			if(selectedPieceX-1 == x && selectedPieceY - 2 == y && selectedPieceX -1 >= 0){
+				if(board[(selectedPieceX-1) + (selectedPieceY-1)*boardH] != 0) return true;
+			}
+		}
+		if(selectedPieceX-2 == x && selectedPieceY == y && selectedPieceX-2 >= 0){
+			if(board[(selectedPieceX+1) + (selectedPieceY)*boardH] != 0) return true;
+		}
+		if(selectedPieceX+2 == x && selectedPieceY == y && selectedPieceX+2 < boardW){
+			if(board[(selectedPieceX-1) + (selectedPieceY)*boardH] != 0) return true;
+		}
+		if(selectedPieceY +2 < boardH){
+			if(selectedPieceX -1 == x && selectedPieceY +2 == y && selectedPieceX -1 >= 0){
+				if(board[(selectedPieceX-1) + (selectedPieceY+1)*boardH] != 0) return true;
+			}
+			if(selectedPieceX +1 == x && selectedPieceY +2 == y && selectedPieceX +1 < boardW){
+				if(board[(selectedPieceX) + (selectedPieceY+1)*boardH] != 0) return true;
+			}
+		}
+	}else{//Odd Row
+		if(selectedPieceY -2 >= 0){
+			if(selectedPieceX + 1 == x && selectedPieceY -2 == y && selectedPieceX +1 < boardW){
+				if(board[(selectedPieceX+1) + (selectedPieceY-1)*boardH] != 0) return true;
+			}
+			if(selectedPieceX-1 == x && selectedPieceY - 2 == y && selectedPieceX -1 >= 0){
+				if(board[(selectedPieceX) + (selectedPieceY-1)*boardH] != 0) return true;
+			}
+		}
+		if(selectedPieceX-2 == x && selectedPieceY == y && selectedPieceX -2 >= 0){
+			if(board[(selectedPieceX+1) + (selectedPieceY)*boardH] != 0) return true;
+		}
+		if(selectedPieceX+2 == x && selectedPieceY == y && selectedPieceX + 2 < boardW){
+			if(board[(selectedPieceX-1) + (selectedPieceY)*boardH] != 0) return true;
+		}
+		if(selectedPieceX -1 == x && selectedPieceY +2 == y && selectedPieceX -1 >= 0 && selectedPieceY +2 < boardH){
+			if(board[(selectedPieceX) + (selectedPieceY+1)*boardH] != 0) return true;
+		}
+		if(selectedPieceX +1 == x && selectedPieceY +2 == y && selectedPieceX +1 < boardW && selectedPieceY +2 < boardH){
+			if(board[(selectedPieceX) + (selectedPieceY+1)*boardH] != 0) return true;
+		}
+	}
 
-	return isNeighboringSpace(selectedPieceX-xVal,selectedPieceY-yVal);
+
+	return false;
+
+	
 }
 
 //Return true if and only if the board currently contains
@@ -480,7 +529,7 @@ bool canPlaceOldPiece(int x, int y){
 	if(!isJumpSpace(x, y) && !isNeighboringSpace(x, y)) return false;
 
 	std::vector<int> tempBoard = board;
-
+	if((abs(selectedPieceX-x) >= 2 || abs(selectedPieceY-y) >= 2) && !isJumpSpace(x, y)) return false;
 	putPieceAt(x, y, whoseTurn);
 	putPieceAt(selectedPieceX, selectedPieceY, 0);
 
