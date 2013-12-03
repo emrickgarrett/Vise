@@ -46,6 +46,9 @@ int boardH = 20;
 int pl1spares=4;
 int pl2spares=4;
 
+//Number of destroyed pieces
+int destroyedPieces = 0;
+
 //Valid values are 1 or 2, to indicate whose turn it is
 int whoseTurn=1;
 
@@ -118,7 +121,25 @@ void testApp::setup(){
 
 	/************************************** TESTS ************************************/
 
-	/***** Test to see if jump spaces are working! *****/
+	putPieceAt(4,4,1);
+	putPieceAt(4,5,2);
+
+	/***** Test to check if they are connected! *****
+
+	putPieceAt(4,4,1);
+	putPieceAt(4,5,2);
+	putPieceAt(4,6,1);
+	putPieceAt(4,3,2);
+	putPieceAt(5,4,1);
+
+	pl1spares = 2;
+	pl2spares = 3;
+
+	std::cout << "Is it connected? " << isConnected() << std::endl;
+
+	*/
+
+	/***** Test to see if jump spaces are working! *****
 	selectedPieceX = 4;
 	selectedPieceY = 3;
 
@@ -133,7 +154,7 @@ void testApp::setup(){
 	std::cout << "Space at (4,2): " << isJumpSpace(4, 2) << std::endl;
 	std::cout << "Space at (5,3): " << isJumpSpace(5, 3) << std::endl;
 
-	/*/
+	*/
 
 	/**** Placing Pieces/ Checking for Neighbors test ****
 	putPieceAt(4, 4, 1);
@@ -325,7 +346,11 @@ bool isNeighboringSpace(int x, int y){
 
 //Return true iff (x,y) is one jump to (selectedPieceX,selectedPieceY)
 //These inputs are in board coordinates, not screen coordinates
+//The logic for this isn't right! NEED TO FIX
 bool isJumpSpace(int x, int y){
+
+	//TODO
+
 	int xVal = x-selectedPieceX;
 	int yVal = y-selectedPieceY;
 
@@ -364,37 +389,60 @@ bool isConnected(){
 				 std::vector<pair<int,int>> temp = std::vector<pair<int,int>>();
 
 				 for(std::vector<pair<int,int>>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
+					 bool flag = false;
 					for(std::vector<pair<int,int>>::iterator nIt = nodes.begin(); nIt != nodes.end(); nIt++){
-						if((*it) != (*nIt)){
+						if((*it) == (*nIt))flag = true;
+					}
+					 if(!flag){
 							numCount++;
 							temp.clear();
-							nodes.push_back(*it);
+							nodes.push_back((*it));
 
-							getNbrs(x, y, goodNbrs, badNbrs, temp);
-
+							getNbrs((*it).first, (*it).second, goodNbrs, badNbrs, temp);
 							neighbors = mergeVectors(neighbors, temp);
+							it = neighbors.begin(); //Temp fix, screws up iterator
+							std::cout << "The Count has gone up!" << std::endl;
 
 						}
-					}
+					
 				 }
+				 std::cout << "Area 1: " << 2 + (4 - pl1spares) + (4-pl2spares)<< std::endl;
+				 std::cout << "NumCount: " << numCount-destroyedPieces << std::endl;
+				 return (numCount == 2 + (4 - pl1spares) + (4-pl2spares) - destroyedPieces);
 
 			}
 
-			//TODO Breadth search based on my getNbrs function!
-
-			//TODO return:
-			return (numCount == 2 + (4-pl1spares)+ (4-pl2spares));
+			
 
 
 		}
+		
 	}
 
-	return true;
+	//TODO Breadth search based on my getNbrs function!
+
+	//TODO return:
+	std::cout << "Area 2: " << 2 + (4 - pl1spares) + (4-pl2spares)<< std::endl;
+	std::cout << "NumCount: " << numCount-destroyedPieces << std::endl;
+	return (numCount == 2 + (4-pl1spares)+ (4-pl2spares) - destroyedPieces);
 }
 
 std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vector<pair<int,int>> v2){
 	std::vector<pair<int,int>> temp = std::vector<pair<int,int>>();
 
+	for(std::vector<pair<int,int>>::iterator it = v1.begin(); it != v1.end(); it++){
+		temp.push_back((*it));
+	}
+
+	for(std::vector<pair<int,int>>::iterator it = v2.begin(); it != v2.end(); it++){
+		bool flag = false;
+		for(std::vector<pair<int,int>>::iterator tempIt = temp.begin(); tempIt != temp.end(); tempIt++){
+			if((*it) == (*tempIt)) flag = true;
+		}
+		if(!flag){
+				temp.push_back((*it));
+		}
+	}
 
 	return temp;
 }
@@ -421,10 +469,32 @@ std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vect
  */
 bool canPlaceOldPiece(int x, int y){
     //TODO
-	return true;
-    return false;
-}
+	int okayNbrs = 0;
+	int badNbrs = 0;
+	std::vector<pair<int,int>> neighbors = std::vector<pair<int,int>>();
 
+	if(board[x + y*boardH] != 0) return false;
+
+	getNbrs(x, y, okayNbrs, badNbrs, neighbors);
+	if(okayNbrs == 0 && badNbrs == 0) return false;
+	if(!isJumpSpace(x, y) && !isNeighboringSpace(x, y)) return false;
+
+	std::vector<int> tempBoard = board;
+
+	putPieceAt(x, y, whoseTurn);
+	putPieceAt(selectedPieceX, selectedPieceY, 0);
+
+	if(isConnected()){
+		board = tempBoard;
+		return true;
+	}else{
+		board = tempBoard;
+		return false;
+	}
+
+
+    return true;
+}
 /*
  * Which type of piece is at board position (x,y)?
  * If no piece, return 0. Otherwise, return the player number of the piece
