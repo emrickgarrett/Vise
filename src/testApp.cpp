@@ -25,6 +25,9 @@ int pieceAt(int x,int y);
 void putPieceAt(int x, int y, int whichPiece);
 std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vector<pair<int,int>> v2);
 void getOpenNbrs(int x, int y, std::vector<pair<int,int>>& list);
+std::vector<std::vector<pair<int,int>>> getClusters();
+std::vector<pair<int,int>> determineLargest(std::vector<std::vector<pair<int,int>>> clusters, int whoseTurn);
+void returnPieces(std::vector<pair<int,int>> cluster);
 
 //Drawing functions
 void drawHex(float x, float y, float sideLen);
@@ -124,8 +127,8 @@ void testApp::setup(){
 
 	/************************************** TESTS ************************************/
 
-	putPieceAt(4,4,1);
-	putPieceAt(4,5,2);
+	putPieceAt(9,9,1);
+	putPieceAt(10,9,2);
 
 	/***** Test to check if they are connected! *****
 
@@ -207,6 +210,49 @@ void testApp::setup(){
 // not screen coordinates
 bool inVise(int x, int y){
     //TODO
+	int color = 3- board[x + y*boardH];
+	int offset = (y%2 == 0)? -1: 1;
+
+	//I'm thinking same logic as jump space, except I'm looking at the midpoints! 
+	//Also going to split into even/odd for now, because I'm burnt out on thinking atm and want to get this done
+	//for the video tonight!
+
+	//Split into 3 checks, bottom left, left, top left (if there's no opposing piece, it doesn't need to check opposite side!)
+	if(offset == -1){ // Even
+		if(x-1 >= 0 && y-1 >= 0 && board[(x-1)+(y-1)*boardH] == color ){
+			if(y+1 < boardH && board[x+(y+1)*boardH] == color){
+				std::cout << "VISE!" << std::endl;
+			}
+		}
+		if(x-1 >= 0 && board[(x-1)+y*boardH] == color){
+			if(x+1 < boardW && board[(x+1)+y*boardH] == color){
+				std::cout << "VISE!" << std::endl;
+			}
+		}
+		if(x-1 >= 0 && y+1 < boardH && board[(x-1)+(y+1)*boardH] == color){
+			if(y-1 >= 0 && board[x + (y-1)*boardH] == color){
+				std::cout << "VISE!" << std::endl;
+			}
+		}
+	}
+	if(offset == 1){// Odd
+		if(y-1 >= 0 && board[x+(y-1)*boardH] == color ){
+			if(x+1 < boardW && y+1 < boardH && board[(x+1)+(y+1)*boardH] == color){
+				std::cout << "VISE!" << std::endl;
+			}
+		}
+		if(x-1 >= 0 && board[(x-1)+y*boardH] == color){
+			if(x+1 < boardW && board[(x+1)+y*boardH] == color){
+				std::cout << "VISE!" << std::endl;
+			}
+		}
+		if( y+1 < boardH && board[x+(y+1)*boardH] == color){
+			if(x+1 < boardW && y-1 >= 0 && board[(x+1) + (y-1)*boardH] == color){
+				std::cout << "VISE!" << std::endl;
+			}
+		}
+	}
+
     return false;
 }
 
@@ -229,7 +275,48 @@ bool inVise(int x, int y){
  */
 void doVise(){
     //TODO
+
+	//Remove all pieces caught in a vise!
+	for(int x = 0; x < boardW; x++){
+		for(int y = 0; y < boardH; y++){
+			if(board[x + y*boardH] != 0){
+				inVise(x, y);
+			}
+		}
+	}
+	if(isConnected() || currentAction != 0) return;
+
+	std::cout << "POOP" << std::endl;
+
+	//std::vector<std::vector<int,int>> getClusters();
+	//std::vector<int,int> determineLargest(std::vector<std::vector<int,int>> clusters, int whoseTurn);
+	//void returnPieces(std::vector<int,int> cluster);
 }
+
+
+
+//Called after the pieces have been removed due to the vice!
+std::vector<std::vector<pair<int,int>>> getClusters(){
+	std::vector<std::vector<pair<int,int>>> temp = std::vector<std::vector<pair<int,int>>>();
+
+
+	return temp;
+}
+
+//Called to get the largest cluster on the board, containing a piece of the last player to go :)
+std::vector<pair<int,int>> determineLargest(std::vector<std::vector<pair<int,int>>> clusters, int whoseTurn){
+	std::vector<pair<int,int>> largest = std::vector<pair<int,int>>();
+
+
+	return largest;
+}
+
+
+//Called to return the pieces of a cluster!
+void returnPieces(std::vector<pair<int,int>> cluster){
+
+}
+
 
 //--------------------------------------------------------------
 void testApp::update(){
@@ -376,6 +463,7 @@ void getOpenNbrs(int x, int y, std::vector<pair<int,int>>& list){
  * opposing player's piece
  */
 bool canPlaceNewPiece(int x, int y){
+	if(board[x + y*boardW] != 0) return false;
     int okayNbrs=0;
     int badNbrs=0;
 	std::vector<std::pair<int, int>> garbage = std::vector<std::pair<int, int>>();
@@ -717,16 +805,25 @@ void testApp::mousePressed(int x, int y, int button){
         if(whoseTurn == 1 && pl1spares > 0 && currentAction == 0){
             currentAction = 1;
             pl1spares--;
+			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
         } else if(whoseTurn == 2 && pl2spares > 0 && currentAction == 0){
             currentAction = 1;
             pl2spares--;
+			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
         } else if (whoseTurn == 1 && currentAction == 1){
             currentAction = 0;
             pl1spares++;
+			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
         } else if (whoseTurn == 2 && currentAction == 1){
             currentAction = 0;
             pl2spares++;
-        }
+			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
+        }else{
+			PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+		}
+
+		
+
     } else if(x > boardXOffset && x <= boardXOffset +(boardW)*hexW ) {
         //We are clicking on the board...
         if(currentAction == 1){
@@ -738,13 +835,18 @@ void testApp::mousePressed(int x, int y, int button){
                     currentAction = 0;
                     putPieceAt(whichCol,whichRow,whoseTurn);
                     whoseTurn = 3 - whoseTurn;
-                }
+
+					if(whoseTurn == 1){
+					PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
+					}else{
+					PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+					}
+
+                }else{
+					PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+				}
             }
-			if(whoseTurn == 1){
-				PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
-			}else{
-				PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
-			}
+			
 
         } else if(currentAction == 0){
             //...picking up and old piece
@@ -769,7 +871,16 @@ void testApp::mousePressed(int x, int y, int button){
                     currentAction = 0;
                     putPieceAt(whichCol,whichRow,whoseTurn);
                     whoseTurn = 3 - whoseTurn;
-                }
+
+					if(whoseTurn == 1){
+					PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
+					}else{
+					PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+					}
+
+                }else{
+					PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+				}
             }
         }
     }
