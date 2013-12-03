@@ -21,6 +21,7 @@ bool isConnected();
 bool canPlaceOldPiece(int x, int y);
 int pieceAt(int x,int y);
 void putPieceAt(int x, int y, int whichPiece);
+std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vector<pair<int,int>> v2);
 
 //Drawing functions
 void drawHex(float x, float y, float sideLen);
@@ -347,7 +348,37 @@ bool isConnected(){
 
 	for(int x = 0; x < boardW; x++){
 		for(int y = 0; y < boardH; y++){
-			if(board[x + y*boardH] != 0) numCount++;
+			if(board[x + y*boardH] != 0){
+				 numCount++;
+
+				 std::vector<pair<int, int>> nodes = std::vector<pair<int,int>>();
+				 nodes.push_back(pair<int, int>(x, y));
+
+				 int goodNbrs = 0;
+				 int badNbrs = 0;
+				 
+
+				 std::vector<pair<int,int>> neighbors = std::vector<pair<int, int>>();
+				 getNbrs(x, y, goodNbrs, badNbrs, neighbors);
+
+				 std::vector<pair<int,int>> temp = std::vector<pair<int,int>>();
+
+				 for(std::vector<pair<int,int>>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
+					for(std::vector<pair<int,int>>::iterator nIt = nodes.begin(); nIt != nodes.end(); nIt++){
+						if((*it) != (*nIt)){
+							numCount++;
+							temp.clear();
+							nodes.push_back(*it);
+
+							getNbrs(x, y, goodNbrs, badNbrs, temp);
+
+							neighbors = mergeVectors(neighbors, temp);
+
+						}
+					}
+				 }
+
+			}
 
 			//TODO Breadth search based on my getNbrs function!
 
@@ -359,6 +390,13 @@ bool isConnected(){
 	}
 
 	return true;
+}
+
+std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vector<pair<int,int>> v2){
+	std::vector<pair<int,int>> temp = std::vector<pair<int,int>>();
+
+
+	return temp;
 }
 
 /* This is used when the player is moving one of her pieces that is
@@ -383,6 +421,7 @@ bool isConnected(){
  */
 bool canPlaceOldPiece(int x, int y){
     //TODO
+	return true;
     return false;
 }
 
