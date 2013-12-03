@@ -1,4 +1,6 @@
 #include "testApp.h"
+#include <Windows.h>
+#include <mmsystem.h>
 
 #include <set>
 #include <iostream> //For debugging
@@ -738,6 +740,12 @@ void testApp::mousePressed(int x, int y, int button){
                     whoseTurn = 3 - whoseTurn;
                 }
             }
+			if(whoseTurn == 1){
+				PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
+			}else{
+				PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+			}
+
         } else if(currentAction == 0){
             //...picking up and old piece
             int whichRow = (y-boardYOffset+hexH/2)/hexH;
