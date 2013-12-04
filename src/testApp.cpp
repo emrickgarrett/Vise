@@ -29,6 +29,7 @@ std::vector<pair<int,int>> determineSmallest(int whoseTurn);
 void returnPieces(std::vector<pair<int,int>> cluster);
 bool checkBoardForWin(int& winner);
 void resetGame();
+void makeAIMove();
 
 //Drawing functions
 void drawHex(float x, float y, float sideLen);
@@ -51,6 +52,9 @@ void drawGUI();
 int boardW = 20;
 int boardH = 20;
 
+int pl1Wins = 0;
+int pl2Wins = 0;
+
 //TODO: Make any variables you need for representing your board here
 
 //Number of spare playing pieces left, for each player
@@ -59,6 +63,10 @@ int pl2spares=4;
 
 //Number of destroyed pieces
 int destroyedPieces = 0;
+int aiDestroyed = 0;
+
+//If the player is playing the AI
+bool playingAI = false;
 
 //Valid values are 1 or 2, to indicate whose turn it is
 int whoseTurn=1;
@@ -131,91 +139,12 @@ void testApp::setup(){
     // updates or draws are too time conusming.
     ofSetFrameRate(60);
 
+	srand(clock());
 	resetGame();
 
     //TODO: Initialize your "board" data structure here
 	inGame = false;
     startTime = ofGetElapsedTimef();
-
-
-
-	/************************************** TESTS ************************************/
-
-	
-
-	/***** Test to check if they are connected! *****
-
-	putPieceAt(4,4,1);
-	putPieceAt(4,5,2);
-	putPieceAt(4,6,1);
-	putPieceAt(4,3,2);
-	putPieceAt(5,4,1);
-
-	pl1spares = 2;
-	pl2spares = 3;
-
-	std::cout << "Is it connected? " << isConnected() << std::endl;
-
-	*/
-
-	/***** Test to see if jump spaces are working! *****
-	selectedPieceX = 4;
-	selectedPieceY = 3;
-
-	putPieceAt(4, 3, 1);
-	putPieceAt(4, 4, 2);
-	putPieceAt(4, 5, 2);
-	putPieceAt(4, 2, 2);
-	putPieceAt(5, 3, 2);
-
-	std::cout << "Space at (4,4): " << isJumpSpace(4, 4) << std::endl;
-	std::cout << "Space at (4,5): " << isJumpSpace(4, 5) << std::endl;
-	std::cout << "Space at (4,2): " << isJumpSpace(4, 2) << std::endl;
-	std::cout << "Space at (5,3): " << isJumpSpace(5, 3) << std::endl;
-
-	*/
-
-	/**** Placing Pieces/ Checking for Neighbors test ****
-	putPieceAt(4, 4, 1);
-	putPieceAt(4, 3, 1);
-	putPieceAt(4, 5, 1);
-	putPieceAt(5, 4, 2);
-	putPieceAt(5, 3, 2);
-	putPieceAt(5, 5, 2);
-	putPieceAt(3, 3, 2);
-	putPieceAt(3, 4, 1);
-	
-	int okayNbrs = 0;
-	int badNbrs = 0;
-
-	std::vector<std::pair<int, int>> temp = std::vector<std::pair<int, int>>();
-	
-	getNbrs(4, 5, okayNbrs, badNbrs, temp);
-
-	//Method to test if it successfully gets all the neighbor pairs
-	int i = 0;
-	for(std::vector<std::pair<int, int>>::iterator it = temp.begin(); it != temp.end(); it++, i++){
-		std::cout << "Neighbor #" << i << " is: " << (*it).first << ", " << (*it).second << std::endl;
-	}
-
-
-	std::cout << "Okay Numbers is: " << okayNbrs << "\nBad Numbers is: " << badNbrs << std::endl;
-	*/
-
-	/**** Is a Neighbor test ****
-	selectedPieceX = 1;
-	selectedPieceY = 1;
-	std::cout << "Is a Neighbor (1, 0)? " << isNeighboringSpace(1, 0) << std::endl;
-	std::cout << "Is a Neighbor (2, 0)? " << isNeighboringSpace(2, 0) << std::endl;
-	std::cout << "Is a Neighbor (2, 1)? " << isNeighboringSpace(2, 1) << std::endl;
-	std::cout << "Is a Neighbor? (0, 1)" << isNeighboringSpace(0, 1) << std::endl;
-	std::cout << "Is a Neighbor? (1, 2)" << isNeighboringSpace(1, 2) << std::endl;
-	std::cout << "Is a Neighbor? (2, 2)" << isNeighboringSpace(2, 2) << std::endl;
-	std::cout << "Is a Neighbor? (1, 3)" << isNeighboringSpace(1, 3) << std::endl;
-	std::cout << "Is a Neighbor? (2, 3)" << isNeighboringSpace(2, 3) << std::endl;
-	std::cout << "Is a Neighbor? (0, 3)" << isNeighboringSpace(0, 3) << std::endl;
-	*/ 
-
 }
 
 void resetGame(){
@@ -233,6 +162,7 @@ void resetGame(){
 	destroyedPieces = 0;
 	selectedPieceX = 0;
 	selectedPieceY = 0;
+	aiDestroyed = 0;
 }
 
 //Return true iff there is a piece in board space (x,y), and that piece
@@ -254,6 +184,7 @@ bool inVise(int x, int y){
 				board[x+(y)*boardH] = 0;
 				destroyedPieces++;
 				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
+				if(playingAI && color == 2) aiDestroyed++;
 			}
 		}
 		if(x-1 >= 0 && board[(x-1)+y*boardH] == color){
@@ -261,6 +192,7 @@ bool inVise(int x, int y){
 				board[x+(y)*boardH] = 0;
 				destroyedPieces++;
 				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
+				if(playingAI && color == 2) aiDestroyed++;
 			}
 		}
 		if(x-1 >= 0 && y+1 < boardH && board[(x-1)+(y+1)*boardH] == color){
@@ -268,6 +200,7 @@ bool inVise(int x, int y){
 				board[x+(y)*boardH] = 0;
 				destroyedPieces++;
 				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
+				if(playingAI && color == 2) aiDestroyed++;
 			}
 		}
 	}
@@ -277,6 +210,7 @@ bool inVise(int x, int y){
 				board[x+(y)*boardH] = 0;
 				destroyedPieces++;
 				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
+				if(playingAI && color == 2) aiDestroyed++;
 			}
 		}
 		if(x-1 >= 0 && board[(x-1)+y*boardH] == color){
@@ -284,6 +218,7 @@ bool inVise(int x, int y){
 				board[x+(y)*boardH] = 0;
 				destroyedPieces++;
 				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
+				if(playingAI && color == 2) aiDestroyed++;
 			}
 		}
 		if( y+1 < boardH && board[x+(y+1)*boardH] == color){
@@ -291,6 +226,7 @@ bool inVise(int x, int y){
 				board[x+(y)*boardH] = 0;
 				destroyedPieces++;
 				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
+				if(playingAI && color == 2) aiDestroyed++;
 			}
 		}
 	}
@@ -338,6 +274,14 @@ void doVise(){
 		isWinner = true;
 		winner = tWinner;
 		inGame = false;
+
+		if(winner == 0){
+			std::cout << "Tie!" << std::endl;
+			return;
+		}
+
+		(winner == 1)? pl1Wins++ : pl2Wins++;
+
 		std::cout << "Winner is: " << tWinner << std::endl;
 		PlaySound("..//sounds//victory.wav", NULL, SND_ASYNC);
 	}
@@ -507,7 +451,12 @@ void testApp::update(){
     //Check for vised pieces on every update
 	if(inGame){
 		doVise();
+
+		if(playingAI && whoseTurn == 2){
+			makeAIMove();
+		}
 	}
+	
 }
 
 //Draw a single hexagon centered at (x,y).
@@ -999,6 +948,28 @@ void drawCredits(){
 
 void drawGUI(){
 	//Draw game gui here!
+	 float xOffset = boardXOffset + (1+boardW)*hexW;
+
+	 //Draw the Current Turn, plus the players color :)
+	 int color = (whoseTurn == 1)? 255 : 0;
+	 
+	 ofSetColor(255, 255, 255);
+	 ofDrawBitmapString("It is your turn : ", xOffset-sideLen/2, boardYOffset+70, 0);
+
+	 ofSetColor(color, color, color);
+	 ofCircle(xOffset+160, boardYOffset+70-sideLen/2/2, sideLen/2);
+
+
+	 //Draw Player Records Here :)
+	 ofSetColor(255, 255, 255); //Player 1
+	 ofDrawBitmapString("Total Wins For Player : ", xOffset-sideLen/2, boardYOffset+110,0);
+	 ofCircle(xOffset+200, boardYOffset+110-sideLen/2/2, sideLen/2);
+	 ofDrawBitmapString((" - " + static_cast<ostringstream*>( &(ostringstream() << pl1Wins) )->str()), xOffset+210, boardYOffset+110, 0);
+
+	 ofSetColor(0, 0, 0);       //Player 2
+	 ofDrawBitmapString("Total Wins For Player : ", xOffset-sideLen/2, boardYOffset+130,0);
+	 ofCircle(xOffset+200, boardYOffset+130-sideLen/2/2, sideLen/2);
+	 ofDrawBitmapString((" - " + static_cast<ostringstream*>( &(ostringstream() << pl2Wins) )->str()), xOffset+210, boardYOffset+130, 0);
 }
 
 //--------------------------------------------------------------
@@ -1036,7 +1007,7 @@ void testApp::mousePressed(int x, int y, int button){
 				currentAction = 1;
 				pl1spares--;
 				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
-			} else if(whoseTurn == 2 && pl2spares > 0 && currentAction == 0){
+			} else if(whoseTurn == 2 && pl2spares > 0 && currentAction == 0 && !playingAI){
 				currentAction = 1;
 				pl2spares--;
 				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
@@ -1044,7 +1015,7 @@ void testApp::mousePressed(int x, int y, int button){
 				currentAction = 0;
 				pl1spares++;
 				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
-			} else if (whoseTurn == 2 && currentAction == 1){
+			} else if (whoseTurn == 2 && currentAction == 1 && !playingAI){
 				currentAction = 0;
 				pl2spares++;
 				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
@@ -1054,7 +1025,7 @@ void testApp::mousePressed(int x, int y, int button){
 
 		
 
-		} else if(x > boardXOffset && x <= boardXOffset +(boardW)*hexW ) {
+		} else if(x > boardXOffset && x <= boardXOffset +(boardW)*hexW && (!playingAI || whoseTurn == 1)) {
 			//We are clicking on the board...
 			if(currentAction == 1){
 				//...placing a new piece
@@ -1068,7 +1039,7 @@ void testApp::mousePressed(int x, int y, int button){
 
 						if(whoseTurn == 1){
 						PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
-						}else{
+						}else if(!playingAI){
 						PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
 						}
 
@@ -1120,7 +1091,10 @@ void testApp::mousePressed(int x, int y, int button){
 			resetGame();
 			inGame = true;
 		}else if(x >= boardXOffset && x <= boardXOffset + 140 && y >= boardYOffset+10 && y < boardYOffset+20){
-			PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+			resetGame();
+			playingAI = true;
+			inGame = true;
+			aiDestroyed = 0;
 		}else if(x >= boardXOffset && x <= boardXOffset + 60 && y >= boardYOffset +30 && y < boardYOffset+40){
 			if(!isWinner){
 				inGame = true;
@@ -1143,5 +1117,80 @@ void testApp::keyReleased(int key){
 	if(inGame && key == 114){
 		resetGame();
 	}
+}
+
+
+
+
+
+//HERE IS MY AI CODE
+
+void makeAIMove(){
+	//AI will always be player 2 :)
+
+	int num = rand()%2;
+
+	if(pl2spares + aiDestroyed > 2 || (num == 0 && pl2spares > 0)){ // Play a new piece
+		std::vector<pair<int,int>> moves = std::vector<pair<int,int>>();
+		for(int x = 0; x < boardW; x++){
+			for(int y = 0; y < boardH; y++){
+				if(canPlaceNewPiece(x, y)) moves.push_back(pair<int, int>(x, y));
+			}
+		}
+
+		int r = rand()%moves.size();
+
+		int x = moves[r].first;
+		int y = moves[r].second;
+
+		if(pl2spares > 0){//In case something weird happened -.-
+			board[x + y*boardH] = 2;
+			pl2spares--;
+			whoseTurn = 1;
+			currentAction = 0;
+			//PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+
+			return;
+		}
+
+	}
+
+	//Place an old piece!
+
+	std::vector<pair<pair<int,int>, pair<int,int>>> moves = std::vector<pair<pair<int,int>,pair<int,int>>>();
+
+	std::vector<pair<int,int>> oldPieces = std::vector<pair<int,int>>();
+	for(int x = 0; x < boardW; x++){
+		for(int y = 0; y < boardH; y++){
+			if(board[x+y*boardH] == 2) oldPieces.push_back(pair<int,int>(x,y));
+		}
+	}
+
+	for(std::vector<pair<int,int>>::iterator it = oldPieces.begin(); it != oldPieces.end(); it++){
+		selectedPieceX = (*it).first;
+		selectedPieceY = (*it).second;
+		for(int x = 0; x < boardW; x++){
+			for(int y = 0; y < boardH; y++){
+				if(canPlaceOldPiece(x,y)){
+					moves.push_back(pair<pair<int,int>,pair<int,int>>(pair<int,int>(selectedPieceX,selectedPieceY), pair<int,int>(x, y)));
+				}
+			}
+		}
+
+	}
+	
+	int r = rand()%moves.size();
+
+	int selectedX = moves[r].first.first;
+	int selectedY = moves[r].first.second;
+
+	int x = moves[r].second.first;
+	int y = moves[r].second.second;
+
+	board[x + y*boardH] = 2;
+	board[selectedX + selectedY*boardH] = 0;
+	currentAction = 0;
+	whoseTurn = 1;
+	//PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
 }
 
