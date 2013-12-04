@@ -28,11 +28,16 @@ void getOpenNbrs(int x, int y, std::vector<pair<int,int>>& list);
 std::vector<pair<int,int>> determineSmallest(int whoseTurn);
 void returnPieces(std::vector<pair<int,int>> cluster);
 bool checkBoardForWin(int& winner);
+void resetGame();
 
 //Drawing functions
 void drawHex(float x, float y, float sideLen);
 void drawBoard();
 void drawSpares();
+void drawWinner();
+void drawMenu();
+void drawCredits();
+void drawGUI();
 
 //////////////////
 /*
@@ -86,6 +91,15 @@ int currentFrame = 0;
 //Time at the start of the program
 float startTime;
 
+//Is there a winner?
+bool isWinner = false;
+
+//Is in the game?
+bool inGame = true;
+
+//Who is the winner?
+int winner = 0;
+
 /////////////////
 /*
  * View variables
@@ -116,19 +130,18 @@ void testApp::setup(){
     //This is the *maximum* rate. Your program might go slower if your
     // updates or draws are too time conusming.
     ofSetFrameRate(60);
-    
-    //TODO: Initialize your "board" data structure here
 
-    //TODO: Put 1 piece for each player in the middle of hte board, side by side
-    
+	resetGame();
+
+    //TODO: Initialize your "board" data structure here
+	inGame = false;
     startTime = ofGetElapsedTimef();
 
 
 
 	/************************************** TESTS ************************************/
 
-	putPieceAt(9,9,1);
-	putPieceAt(10,9,2);
+	
 
 	/***** Test to check if they are connected! *****
 
@@ -203,6 +216,23 @@ void testApp::setup(){
 	std::cout << "Is a Neighbor? (0, 3)" << isNeighboringSpace(0, 3) << std::endl;
 	*/ 
 
+}
+
+void resetGame(){
+	pl1spares = 4;
+	pl2spares = 4;
+	board = std::vector<int>(boardW*boardH, 0);
+
+	putPieceAt(9,9,1);
+	putPieceAt(10,9,2);
+
+	winner = 0;
+	isWinner = false;
+	currentAction = 0;
+	whoseTurn = 1;
+	destroyedPieces = 0;
+	selectedPieceX = 0;
+	selectedPieceY = 0;
 }
 
 //Return true iff there is a piece in board space (x,y), and that piece
@@ -286,7 +316,6 @@ bool inVise(int x, int y){
  * 3d) Tie-breaking: If there is a tie under any of these rules, pick arbitrarily
  */
 void doVise(){
-    //TODO
 
 	//Remove all pieces caught in a vise!
 	for(int x = 0; x < boardW; x++){
@@ -297,17 +326,19 @@ void doVise(){
 		}
 	}
 	if(isConnected() || currentAction != 0) return;
-	std::cout << "Poopy" << std::endl;
 	std::vector<pair<int,int>> smallest = determineSmallest(whoseTurn);
 
 	returnPieces(smallest);
 
-	int winner = 0;
+	int tWinner = 0;
 
-	bool hasWon = checkBoardForWin(winner);
+	bool hasWon = checkBoardForWin(tWinner);
 
 	if(hasWon){
-		std::cout << "Winner is: " << winner << std::endl;
+		isWinner = true;
+		winner = tWinner;
+		inGame = false;
+		std::cout << "Winner is: " << tWinner << std::endl;
 		PlaySound("..//sounds//victory.wav", NULL, SND_ASYNC);
 	}
 
@@ -420,23 +451,23 @@ std::vector<pair<int,int>> determineSmallest(int whoseTurn){
 					 }
 
 					 if(largestSize >= smallestSize){
-						 std::cout << "large" << std::endl;
+						 //std::cout << "large" << std::endl;
 						 return largest;
 					 }else{
-						 std::cout << "small" << std::endl;
+						 //std::cout << "small" << std::endl;
 						 return neighbors;
 					 }
 
 				 }else if(largest.size() != 0 && largest.size() >= neighbors.size()){
 					 //neighbors.push_back(pair<int,int>(x,y));
-					 std::cout << "Large Size: " << largest.size() << "\nSmall Size: " << neighbors.size() << std::endl;
-					 std::cout << "small2" << std::endl;
+					 //std::cout << "Large Size: " << largest.size() << "\nSmall Size: " << neighbors.size() << std::endl;
+					 //std::cout << "small2" << std::endl;
 					 return neighbors;
 				 }else if(largest.size() != 0 && largest.size() < neighbors.size()){
-					 std::cout << "large2" << std::endl;
+					// std::cout << "large2" << std::endl;
 					 return largest;
 				 }
-				 std::cout << "This should run twice" << std::endl;
+				 //std::cout << "This should run twice" << std::endl;
 				 largest = neighbors;
 				 ignore = mergeVectors(ignore, neighbors);
 				 
@@ -474,7 +505,9 @@ void testApp::update(){
     currentFrame = (ofGetElapsedTimef() - startTime)/(1.0/60);
     
     //Check for vised pieces on every update
-    doVise();
+	if(inGame){
+		doVise();
+	}
 }
 
 //Draw a single hexagon centered at (x,y).
@@ -933,10 +966,56 @@ void drawSpares(){
 }
 
 //--------------------------------------------------------------
+void drawMenu(){
+	//draw my menu here :)
+	ofSetColor(255,255,255);
+
+	ofDrawBitmapString("Play Vs. Human", boardXOffset, boardYOffset, 0);
+	ofDrawBitmapString("Play Vs. Computer", boardXOffset, boardYOffset+20, 0);
+	ofDrawBitmapString("Resume", boardXOffset, boardYOffset+40, 0);
+	ofDrawBitmapString("Exit", boardXOffset, boardYOffset+60, 0);
+
+}
+
+//--------------------------------------------------------------
+void drawWinner(){
+	//draw my winner here :)
+	ofSetColor(255,255,255);
+	ofDrawBitmapString(("Winner was player " + static_cast<ostringstream*>( &(ostringstream() << winner) )->str() + "!"), boardXOffset+(boardW/2*hexW), boardYOffset+(boardH/2*hexH), 0);
+	
+	(winner == 1)? ofSetColor(255,255,255) : ofSetColor(0,0,0);
+	
+	ofCircle(boardXOffset+(boardW/2*hexW)+180,  boardYOffset+(boardH/2*hexH)- sideLen/2/2, sideLen/2);
+
+}
+
+void drawCredits(){
+	//Draw credits Here :)
+	ofSetColor(255, 255, 255);
+	ofDrawBitmapString("Creator: Garrett Emrick", boardXOffset, boardYOffset+ 600, 0);
+	ofDrawBitmapString("Instructor: Dr. Brinkman", boardXOffset, boardYOffset+620, 0);
+	ofDrawBitmapString("CSE 274 VISE", boardXOffset, boardYOffset+640, 0);
+}
+
+void drawGUI(){
+	//Draw game gui here!
+}
+
+//--------------------------------------------------------------
 void testApp::draw(){
     ofBackground(128,128,128); //gray
-    drawBoard();
-    drawSpares();
+	if(inGame){
+		drawBoard();
+		drawSpares();
+		drawGUI();
+	}else if(!inGame){
+		drawMenu();
+		drawCredits();
+	}
+
+	if(isWinner){
+		drawWinner();
+	}
 }
 
 /*
@@ -949,90 +1028,120 @@ void putPieceAt(int x, int y, int whichPiece){
 
 //--------------------------------------------------------------
 void testApp::mousePressed(int x, int y, int button){
-    if(x >= boardXOffset + (boardW)*hexW){
-        //We are clicking the right-hand side of the screen, so we are
-        // picking up or putting back a piece
-        if(whoseTurn == 1 && pl1spares > 0 && currentAction == 0){
-            currentAction = 1;
-            pl1spares--;
-			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
-        } else if(whoseTurn == 2 && pl2spares > 0 && currentAction == 0){
-            currentAction = 1;
-            pl2spares--;
-			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
-        } else if (whoseTurn == 1 && currentAction == 1){
-            currentAction = 0;
-            pl1spares++;
-			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
-        } else if (whoseTurn == 2 && currentAction == 1){
-            currentAction = 0;
-            pl2spares++;
-			PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
-        }else{
-			PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
-		}
+	if(inGame){
+		if(x >= boardXOffset + (boardW)*hexW){
+			//We are clicking the right-hand side of the screen, so we are
+			// picking up or putting back a piece
+			if(whoseTurn == 1 && pl1spares > 0 && currentAction == 0){
+				currentAction = 1;
+				pl1spares--;
+				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
+			} else if(whoseTurn == 2 && pl2spares > 0 && currentAction == 0){
+				currentAction = 1;
+				pl2spares--;
+				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
+			} else if (whoseTurn == 1 && currentAction == 1){
+				currentAction = 0;
+				pl1spares++;
+				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
+			} else if (whoseTurn == 2 && currentAction == 1){
+				currentAction = 0;
+				pl2spares++;
+				PlaySound("..//sounds//pickup.wav", NULL, SND_ASYNC);
+			}else{
+				PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+			}
 
 		
 
-    } else if(x > boardXOffset && x <= boardXOffset +(boardW)*hexW ) {
-        //We are clicking on the board...
-        if(currentAction == 1){
-            //...placing a new piece
-            int whichRow = (y-boardYOffset+hexH/2)/hexH;
-            int whichCol = (x-(boardXOffset+(whichRow%2)*(hexW/2))+hexW/2)/hexW;
-            if(whichRow >= 0 && whichRow < boardH && whichCol >= 0 && whichCol < boardW){
-                if(canPlaceNewPiece(whichCol,whichRow)){
-                    currentAction = 0;
-                    putPieceAt(whichCol,whichRow,whoseTurn);
-                    whoseTurn = 3 - whoseTurn;
+		} else if(x > boardXOffset && x <= boardXOffset +(boardW)*hexW ) {
+			//We are clicking on the board...
+			if(currentAction == 1){
+				//...placing a new piece
+				int whichRow = (y-boardYOffset+hexH/2)/hexH;
+				int whichCol = (x-(boardXOffset+(whichRow%2)*(hexW/2))+hexW/2)/hexW;
+				if(whichRow >= 0 && whichRow < boardH && whichCol >= 0 && whichCol < boardW){
+					if(canPlaceNewPiece(whichCol,whichRow)){
+						currentAction = 0;
+						putPieceAt(whichCol,whichRow,whoseTurn);
+						whoseTurn = 3 - whoseTurn;
 
-					if(whoseTurn == 1){
-					PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
+						if(whoseTurn == 1){
+						PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
+						}else{
+						PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+						}
+
 					}else{
-					PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+						PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
 					}
-
-                }else{
-					PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
 				}
-            }
 			
 
-        } else if(currentAction == 0){
-            //...picking up and old piece
-            int whichRow = (y-boardYOffset+hexH/2)/hexH;
-            int whichCol = (x-(boardXOffset+(whichRow%2)*(hexW/2))+hexW/2)/hexW;
+			} else if(currentAction == 0){
+				//...picking up and old piece
+				int whichRow = (y-boardYOffset+hexH/2)/hexH;
+				int whichCol = (x-(boardXOffset+(whichRow%2)*(hexW/2))+hexW/2)/hexW;
             
-            if(pieceAt(whichCol,whichRow) == whoseTurn){
-                selectedPieceX = whichCol;
-                selectedPieceY  = whichRow;
-                currentAction = 2;
-                putPieceAt(whichCol,whichRow,0);
-            }
-        } else if(currentAction == 2){
-            //...placing an old piece back on the board
-            int whichRow = (y-boardYOffset+hexH/2)/hexH;
-            int whichCol = (x-(boardXOffset+(whichRow%2)*(hexW/2))+hexW/2)/hexW;
-            if(whichRow == selectedPieceY && whichCol == selectedPieceX){
-                currentAction = 0;
-                putPieceAt(whichCol,whichRow,whoseTurn);
-            } else if(whichRow >= 0 && whichRow < boardH && whichCol >= 0 && whichCol < boardW){
-                if(canPlaceOldPiece(whichCol, whichRow)){
-                    currentAction = 0;
-                    putPieceAt(whichCol,whichRow,whoseTurn);
-                    whoseTurn = 3 - whoseTurn;
-
-					if(whoseTurn == 1){
-					PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
-					}else{
-					PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
-					}
-
-                }else{
-					PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+				if(pieceAt(whichCol,whichRow) == whoseTurn){
+					selectedPieceX = whichCol;
+					selectedPieceY  = whichRow;
+					currentAction = 2;
+					putPieceAt(whichCol,whichRow,0);
 				}
-            }
-        }
-    }
+			} else if(currentAction == 2){
+				//...placing an old piece back on the board
+				int whichRow = (y-boardYOffset+hexH/2)/hexH;
+				int whichCol = (x-(boardXOffset+(whichRow%2)*(hexW/2))+hexW/2)/hexW;
+				if(whichRow == selectedPieceY && whichCol == selectedPieceX){
+					currentAction = 0;
+					putPieceAt(whichCol,whichRow,whoseTurn);
+				} else if(whichRow >= 0 && whichRow < boardH && whichCol >= 0 && whichCol < boardW){
+					if(canPlaceOldPiece(whichCol, whichRow)){
+						currentAction = 0;
+						putPieceAt(whichCol,whichRow,whoseTurn);
+						whoseTurn = 3 - whoseTurn;
+
+						if(whoseTurn == 1){
+						PlaySound("..//sounds//pl1_place.wav", NULL, SND_ASYNC);
+						}else{
+						PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
+						}
+
+					}else{
+						PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+					}
+				}
+			}
+		}
+	}else if(!inGame){
+
+		if(x >= boardXOffset && x <= boardXOffset + 115 && y >= boardYOffset-10 && y < boardYOffset){
+			resetGame();
+			inGame = true;
+		}else if(x >= boardXOffset && x <= boardXOffset + 140 && y >= boardYOffset+10 && y < boardYOffset+20){
+			PlaySound("..//sounds//error.wav", NULL, SND_ASYNC);
+		}else if(x >= boardXOffset && x <= boardXOffset + 60 && y >= boardYOffset +30 && y < boardYOffset+40){
+			if(!isWinner){
+				inGame = true;
+			}else{
+				resetGame();
+				inGame = true;
+			}
+		}else if(x >= boardXOffset && x <= boardXOffset + 50 && y >= boardYOffset + 50 && y < boardYOffset+60){
+			std::exit(0);
+		}
+
+	}
+}
+
+void testApp::keyReleased(int key){
+	//ESC == 27 p == 112 r == 114
+	if(key == 27 || key == 112){
+		inGame = false;
+	}
+	if(inGame && key == 114){
+		resetGame();
+	}
 }
 
