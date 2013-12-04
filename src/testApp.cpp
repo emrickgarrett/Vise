@@ -25,9 +25,9 @@ int pieceAt(int x,int y);
 void putPieceAt(int x, int y, int whichPiece);
 std::vector<pair<int,int>> mergeVectors(std::vector<pair<int,int>> v1, std::vector<pair<int,int>> v2);
 void getOpenNbrs(int x, int y, std::vector<pair<int,int>>& list);
-std::vector<std::vector<pair<int,int>>> getClusters();
-std::vector<pair<int,int>> determineLargest(std::vector<std::vector<pair<int,int>>> clusters, int whoseTurn);
+std::vector<pair<int,int>> determineSmallest(int whoseTurn);
 void returnPieces(std::vector<pair<int,int>> cluster);
+bool checkBoardForWin(int& winner);
 
 //Drawing functions
 void drawHex(float x, float y, float sideLen);
@@ -221,34 +221,46 @@ bool inVise(int x, int y){
 	if(offset == -1){ // Even
 		if(x-1 >= 0 && y-1 >= 0 && board[(x-1)+(y-1)*boardH] == color ){
 			if(y+1 < boardH && board[x+(y+1)*boardH] == color){
-				std::cout << "VISE!" << std::endl;
+				board[x+(y)*boardH] = 0;
+				destroyedPieces++;
+				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
 			}
 		}
 		if(x-1 >= 0 && board[(x-1)+y*boardH] == color){
 			if(x+1 < boardW && board[(x+1)+y*boardH] == color){
-				std::cout << "VISE!" << std::endl;
+				board[x+(y)*boardH] = 0;
+				destroyedPieces++;
+				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
 			}
 		}
 		if(x-1 >= 0 && y+1 < boardH && board[(x-1)+(y+1)*boardH] == color){
 			if(y-1 >= 0 && board[x + (y-1)*boardH] == color){
-				std::cout << "VISE!" << std::endl;
+				board[x+(y)*boardH] = 0;
+				destroyedPieces++;
+				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
 			}
 		}
 	}
 	if(offset == 1){// Odd
 		if(y-1 >= 0 && board[x+(y-1)*boardH] == color ){
 			if(x+1 < boardW && y+1 < boardH && board[(x+1)+(y+1)*boardH] == color){
-				std::cout << "VISE!" << std::endl;
+				board[x+(y)*boardH] = 0;
+				destroyedPieces++;
+				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
 			}
 		}
 		if(x-1 >= 0 && board[(x-1)+y*boardH] == color){
 			if(x+1 < boardW && board[(x+1)+y*boardH] == color){
-				std::cout << "VISE!" << std::endl;
+				board[x+(y)*boardH] = 0;
+				destroyedPieces++;
+				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
 			}
 		}
 		if( y+1 < boardH && board[x+(y+1)*boardH] == color){
 			if(x+1 < boardW && y-1 >= 0 && board[(x+1) + (y-1)*boardH] == color){
-				std::cout << "VISE!" << std::endl;
+				board[x+(y)*boardH] = 0;
+				destroyedPieces++;
+				PlaySound("..//sounds//destroy.wav", NULL, SND_ASYNC);
 			}
 		}
 	}
@@ -285,36 +297,174 @@ void doVise(){
 		}
 	}
 	if(isConnected() || currentAction != 0) return;
+	std::cout << "Poopy" << std::endl;
+	std::vector<pair<int,int>> smallest = determineSmallest(whoseTurn);
 
-	std::cout << "POOP" << std::endl;
+	returnPieces(smallest);
 
-	//std::vector<std::vector<int,int>> getClusters();
-	//std::vector<int,int> determineLargest(std::vector<std::vector<int,int>> clusters, int whoseTurn);
-	//void returnPieces(std::vector<int,int> cluster);
+	int winner = 0;
+
+	bool hasWon = checkBoardForWin(winner);
+
+	if(hasWon){
+		std::cout << "Winner is: " << winner << std::endl;
+		PlaySound("..//sounds//victory.wav", NULL, SND_ASYNC);
+	}
+
 }
 
+bool checkBoardForWin(int& winner){
+	bool p1hasPiece = false;
+	int p1total = 0;
+	bool p2hasPiece = false;
+	int p2total = 0;
 
+	for(int x = 0; x < boardW; x++){
+		for(int y = 0; y < boardH; y++){
+			if(board[x+y*boardH] == 1){ p1hasPiece = true; p1total++;}
+			if(board[x+y*boardH] == 2){ p2hasPiece = true; p2total++;}
+		}
+		
+	}
 
-//Called after the pieces have been removed due to the vice!
-std::vector<std::vector<pair<int,int>>> getClusters(){
-	std::vector<std::vector<pair<int,int>>> temp = std::vector<std::vector<pair<int,int>>>();
+	if(p1hasPiece && p2hasPiece){
+		if(pl1spares == 0 && p1total == 1){
+			winner = 2;
+			return true;
+		}else if(pl2spares == 0 && p2total == 1){
+			winner = 1;
+			return true;
+		}else{
+			return false;
+		}
+	}
 
-
-	return temp;
+	if(!p1hasPiece || !p2hasPiece){
+		if(p1hasPiece){
+			winner = 1;
+			return true;
+		}else if(p2hasPiece){
+			winner = 2;
+			return true;
+		}else{
+			winner = 0;
+			return true;
+		}
+	}
+		return false;
 }
 
 //Called to get the largest cluster on the board, containing a piece of the last player to go :)
-std::vector<pair<int,int>> determineLargest(std::vector<std::vector<pair<int,int>>> clusters, int whoseTurn){
+std::vector<pair<int,int>> determineSmallest(int whoseTurn){
 	std::vector<pair<int,int>> largest = std::vector<pair<int,int>>();
+	std::vector<pair<int,int>> ignore = std::vector<pair<int,int>>();
+
+	//TODO
+	int tempX = 0;
+	int tempY = 0;
+	int numCount = 0;
 
 
+	for(int x = 0; x < boardW; x++){
+		for(int y = 0; y < boardH; y++){
+			bool notInIgnore = true;
+			for(std::vector<pair<int,int>>::iterator ignIt = ignore.begin(); ignIt != ignore.end() && notInIgnore; ignIt++){
+				if(x == (*ignIt).first && y == (*ignIt).second) notInIgnore = false;
+			}
+			if(board[x + y*boardH] != 0 && notInIgnore){
+				 numCount++;
+
+				 std::vector<pair<int, int>> nodes = std::vector<pair<int,int>>();
+				 nodes.push_back(pair<int, int>(x, y));
+
+				 int goodNbrs = 0;
+				 int badNbrs = 0;
+				 
+
+				 std::vector<pair<int,int>> neighbors = std::vector<pair<int, int>>();
+				 getNbrs(x, y, goodNbrs, badNbrs, neighbors);
+
+				 std::vector<pair<int,int>> temp = std::vector<pair<int,int>>();
+
+				 neighbors.push_back(pair<int,int>(x,y));
+
+				 for(std::vector<pair<int,int>>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
+					 bool flag = false;
+					for(std::vector<pair<int,int>>::iterator nIt = nodes.begin(); nIt != nodes.end(); nIt++){
+						if((*it) == (*nIt))flag = true;
+					}
+					 if(!flag){
+							numCount++;
+							temp.clear();
+							nodes.push_back((*it));
+
+							getNbrs((*it).first, (*it).second, goodNbrs, badNbrs, temp);
+							neighbors = mergeVectors(neighbors, temp);
+							it = neighbors.begin();
+
+						}
+					
+				 }
+				 if((numCount < (2 + (4 - pl1spares) + (4-pl2spares) - destroyedPieces)/2)){
+					  return neighbors;
+				 }
+				 if(largest.size() == neighbors.size()){
+					 int largestSize = 0;
+					 int smallestSize = 0;
+
+					 for(std::vector<pair<int,int>>::iterator it = largest.begin(); it != largest.end(); it++){
+						 if(board[(*it).first + (*it).second*boardH] == whoseTurn) largestSize++;
+					 }
+					 for(std::vector<pair<int,int>>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
+						 if(board[(*it).first + (*it).second*boardH] == whoseTurn) smallestSize++;
+					 }
+
+					 if(largestSize >= smallestSize){
+						 std::cout << "large" << std::endl;
+						 return largest;
+					 }else{
+						 std::cout << "small" << std::endl;
+						 return neighbors;
+					 }
+
+				 }else if(largest.size() != 0 && largest.size() >= neighbors.size()){
+					 //neighbors.push_back(pair<int,int>(x,y));
+					 std::cout << "Large Size: " << largest.size() << "\nSmall Size: " << neighbors.size() << std::endl;
+					 std::cout << "small2" << std::endl;
+					 return neighbors;
+				 }else if(largest.size() != 0 && largest.size() < neighbors.size()){
+					 std::cout << "large2" << std::endl;
+					 return largest;
+				 }
+				 std::cout << "This should run twice" << std::endl;
+				 largest = neighbors;
+				 ignore = mergeVectors(ignore, neighbors);
+				 
+
+			}
+
+			
+
+
+		}
+	}
+	std::cout << "oops" << std::endl;
 	return largest;
 }
 
 
 //Called to return the pieces of a cluster!
 void returnPieces(std::vector<pair<int,int>> cluster){
-
+	for(std::vector<pair<int,int>>::iterator it = cluster.begin(); it != cluster.end(); it++){
+		int color = 3 - board[(*it).first + (*it).second*boardH];
+		if(color == 1){
+			board[(*it).first + (*it).second*boardH] = 0;
+			pl2spares++;
+		}else{
+			board[(*it).first + (*it).second*boardH] = 0;
+			pl1spares++;
+		}
+	}
 }
 
 
