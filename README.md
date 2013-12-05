@@ -32,7 +32,11 @@ Questions
 
 #### 1. Which type of data structure did you choose? Explain, in English, the main ideas behind your data structure.
 
-TODO
+
+I decided to go with a single dimension array, allowing for speed at the expense of a little extra math! Using a single dimensional array, the game works very fast, and is very efficient as well! 
+
+
+Using the formula to convert a 2D coordinate into a 1D is simple using (x + y*boardH)! If I want to get a specific location (such as the hex 1 to the right and 1 below) I would use ((x+1)+ (y+1)*boardH)! This is very easy to understand, and doesn't affect the readability of the code (in my opinion).
 
 
 Portfolio Video
@@ -49,4 +53,7 @@ The video should certainly be less than 2 minutes long. I (or the grading assist
 
 #### 1. Give the link to your portfolio video on YouTube.
 
-TODO
+ http://youtu.be/7kaxKHq43v0
+ 
+ 
+ Please note that the actual game is not as sluggish as it looks in the video, it's the free video recording software I am using. Although I do plan on optimizing the project after this video, but as far as functionality goes, this is the final project.
