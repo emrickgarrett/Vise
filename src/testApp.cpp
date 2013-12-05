@@ -1087,14 +1087,19 @@ void testApp::mousePressed(int x, int y, int button){
 		}
 	}else if(!inGame){
 
+		//Play vs. Human
 		if(x >= boardXOffset && x <= boardXOffset + 115 && y >= boardYOffset-10 && y < boardYOffset){
 			resetGame();
 			inGame = true;
+		
+		//Play vs. Computer
 		}else if(x >= boardXOffset && x <= boardXOffset + 140 && y >= boardYOffset+10 && y < boardYOffset+20){
 			resetGame();
 			playingAI = true;
 			inGame = true;
 			aiDestroyed = 0;
+
+		//Resume
 		}else if(x >= boardXOffset && x <= boardXOffset + 60 && y >= boardYOffset +30 && y < boardYOffset+40){
 			if(!isWinner){
 				inGame = true;
@@ -1102,6 +1107,8 @@ void testApp::mousePressed(int x, int y, int button){
 				resetGame();
 				inGame = true;
 			}
+
+		//Quit
 		}else if(x >= boardXOffset && x <= boardXOffset + 50 && y >= boardYOffset + 50 && y < boardYOffset+60){
 			std::exit(0);
 		}
@@ -1178,7 +1185,7 @@ void makeAIMove(){
 		}
 
 	}
-	
+
 	int r = rand()%moves.size();
 
 	int selectedX = moves[r].first.first;
@@ -1193,4 +1200,3 @@ void makeAIMove(){
 	whoseTurn = 1;
 	//PlaySound("..//sounds//pl2_place.wav", NULL, SND_ASYNC);
 }
-
